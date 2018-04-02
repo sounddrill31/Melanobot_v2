@@ -3,3 +3,4 @@ build*
 *.info
 *.log
 _clang-format
+*.sw[op]

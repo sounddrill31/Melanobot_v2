@@ -44,6 +44,7 @@ public:
      */
     XonoticConnection ( const network::Server&  server,
                         const std::string&      password,
+                        const std::string&      log_dest_ip,
                         Darkplaces::Secure      secure = Darkplaces::Secure::NO,
                         const Settings&         settings = {},
                         const std::string&      name = {} );
@@ -71,6 +72,15 @@ public:
     std::string description() const override
     {
         return Darkplaces::server().name();
+    }
+
+    network::Server log_dest_endpoint() const
+    {
+        if (log_dest_ip.empty()) {
+            return local_endpoint();
+        } else {
+            return network::Server(log_dest_ip, local_endpoint().port);
+        }
     }
 
     /**
@@ -198,6 +208,8 @@ private:
     std::string         cmd_say;                        ///< Command used to say messages
     std::string         cmd_say_as;                     ///< Command used to say messages as another user
     std::string         cmd_say_action;                 ///< Command used to show actions
+    std::string         log_dest_ip;                    /// override local ip address
+    std::string         remote_server_name;             /// overriden server name
     PropertyTree        properties_;                     ///< Misc properties (eg: map, gametype)
 
     AtomicStatus        status_{DISCONNECTED};          ///< Connection status

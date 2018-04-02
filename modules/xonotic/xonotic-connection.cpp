@@ -48,13 +48,15 @@ std::unique_ptr<XonoticConnection> XonoticConnection::create(
     }
 
     auto password = settings.get("rcon_password", "");
+    auto log_dest_ip = settings.get("log_dest_ip", "");
     auto secure= Darkplaces::Secure(settings.get("rcon_secure", 0));
-    return melanolib::New<XonoticConnection>(server, password, secure, settings, name);
+    return melanolib::New<XonoticConnection>(server, password, log_dest_ip, secure, settings, name);
 }
 
 XonoticConnection::XonoticConnection (
     const network::Server&  server,
     const std::string&      password,
+    const std::string&      log_dest_ip,
     Darkplaces::Secure      secure,
     const Settings&         settings,
     const std::string&      name
@@ -63,12 +65,17 @@ XonoticConnection::XonoticConnection (
       Darkplaces(server, password, secure),
       status_(DISCONNECTED)
 {
+    this->log_dest_ip = std::move(log_dest_ip);
     formatter_ = string::Formatter::formatter(
         settings.get("string_format", std::string("xonotic")));
 
     cmd_say = settings.get("say", "say $prefix$message");
     cmd_say_as = settings.get("say_as", "say \"$prefix$from^7: $message\"");
     cmd_say_action = settings.get("say_action", "say \"^4* ^3$prefix$from^3 $message\"");
+    remote_server_name = settings.get("server_from_wan", "");
+    if (remote_server_name.empty()) {
+        remote_server_name = server.name();
+    }
 
     // Preset templates
     if ( cmd_say_as == "modpack" )
@@ -258,7 +265,7 @@ string::FormattedProperties XonoticConnection::pretty_properties() const
         {"gametype",    xonotic::gametype_name(gt)},
         {"mutators",    properties_.get("match.mutators", "")},
         {"hostname",    host},
-        {"sv_server",   server().name()}
+        {"sv_server",   remote_server_name}
     };
 }
 
@@ -405,7 +412,7 @@ void XonoticConnection::handle_message(network::Message& msg)
                     // status: INVALID    -> CONNECTING
                     // status: CONNECTING -> CONNECTED + message
                     // status: CHECKING   -> CONNECTED
-                    if ( cvar_value != local_endpoint().name() )
+                    if ( cvar_value != log_dest_endpoint().name() )
                     {
                         update_connection();
                     }
@@ -555,7 +562,7 @@ void XonoticConnection::update_connection()
     {
         status_ = WAITING;
 
-        command({"rcon", {"set", "log_dest_udp", local_endpoint().name()}, 1024});
+        command({"rcon", {"set", "log_dest_udp", log_dest_endpoint().name()}, 1024});
 
         command({"rcon", {"set", "sv_eventlog", "1"}, 1024});
 

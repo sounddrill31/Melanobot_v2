@@ -19,7 +19,6 @@
 #ifndef MELANOBOT_MODULES_TELEGRAM_INLINE_HPP
 #define MELANOBOT_MODULES_TELEGRAM_INLINE_HPP
 
-
 #include "melanobot/handler.hpp"
 #include "telegram-connection.hpp"
 #include "web/handler/web-api.hpp"
@@ -145,8 +144,8 @@ struct PhotoData
 {
     std::string photo_url;
     std::string thumb_url;
-    int photo_width = 0;
-    int photo_height = 0;
+    int photo_width = 512;
+    int photo_height = 512;
     std::string title;
     std::string description;
     std::string parse_mode;

@@ -22,13 +22,14 @@
 #include "melanobot/handler.hpp"
 #include "telegram-connection.hpp"
 #include "web/handler/web-api.hpp"
+#include "httpony/formats/json.hpp"
 
 namespace telegram {
 
-class PropertyBuilder : public PropertyTree
+class PropertyBuilder : public httpony::json::JsonNode
 {
 public:
-    using PropertyTree::PropertyTree;
+    using JsonNode::JsonNode;
 
     void maybe_put(const std::string& name, const std::string& value)
     {
@@ -90,7 +91,7 @@ public:
     PropertyBuilder to_properties() const
     {
         PropertyBuilder ptree;
-        PropertyTree treeresults;
+        httpony::json::JsonNode treeresults;
         int i = 0;
         for ( const auto& result : results )
         {

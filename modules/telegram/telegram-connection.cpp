@@ -21,8 +21,6 @@
  */
 #include "telegram-connection.hpp"
 
-#include <boost/property_tree/json_parser.hpp>
-
 #include "httpony/formats/json.hpp"
 #include "web/client/http.hpp"
 #include "melanobot/storage.hpp"
@@ -53,7 +51,7 @@ TelegramConnection::TelegramConnection(const std::string& api_endpoint,
                                        const std::string& name)
     : AuthConnection(name), PushReceiver(name, settings, name + token)
 {
-    log_errors_callback = [this](const PropertyTree& tree){ log_errors(tree); };
+    log_errors_callback = [this](const httpony::json::JsonNode& tree){ log_errors(tree); };
 
     api_base = api_endpoint + "/bot" + token;
     properties_.put("api.endpoint", api_endpoint);
@@ -113,17 +111,17 @@ void TelegramConnection::command(network::Command cmd)
 
     if ( cmd.command == "getMe" )
     {
-        get("getMe", [this](const PropertyTree& response){
+        get("getMe", [this](const httpony::json::JsonNode& response){
             if ( response.get("ok", false) )
             {
                 auto lock = make_lock(mutex);
-                properties_.put_child("user", response.get_child("result"));
+                properties_.put_child("user", response.get_child("result").to_ptree());
             }
         });
         return;
     }
 
-    PropertyTree payload;
+    httpony::json::JsonNode payload;
 
     if ( cmd.command == "forwardMessage" && cmd.parameters.size() == 3 )
     {
@@ -211,7 +209,7 @@ void TelegramConnection::say(const network::OutputMessage& message)
             str << '<' << message.from << color::nocolor << "> ";
     }
     str << message.message;
-    PropertyTree payload;
+    httpony::json::JsonNode payload;
     /// \todo somehow encode reply_to on target
     payload.put("chat_id", message.target);
     payload.put("text", str.encode(*formatter_));
@@ -229,17 +227,17 @@ void TelegramConnection::get(const std::string& method,
 }
 
 void TelegramConnection::post(const std::string& method,
-                              const PropertyTree& payload,
+                              const httpony::json::JsonNode& payload,
                               const ApiCallback& callback,
                               const ErrorCallback& on_error)
 {
     web::Request web_request("POST", api_uri(method));
     web_request.body.start_output("application/json");
-    boost::property_tree::write_json(web_request.body, payload, false);
+    web_request.body << payload;
     request(std::move(web_request), callback, on_error);
 }
 
-void TelegramConnection::log_errors(const PropertyTree& response) const
+void TelegramConnection::log_errors(const httpony::json::JsonNode& response) const
 {
     if ( !response.get("ok", false) )
     {
@@ -307,22 +305,22 @@ void TelegramConnection::connect()
 
     connection_status = CONNECTING;
 
-    std::function<void (const PropertyTree&)> on_success;
+    std::function<void (const httpony::json::JsonNode&)> on_success;
 
 
     if ( webhook )
     {
-        on_success = [this](const PropertyTree&){
+        on_success = [this](const httpony::json::JsonNode&){
             command(network::Command("getMe"));
         };
     }
     else
     {
-        on_success = [this](const PropertyTree& response)
+        on_success = [this](const httpony::json::JsonNode& response)
         {
             polling_timer.start();
             auto lock = make_lock(mutex);
-            properties_.put_child("user", response.get_child("result"));
+            properties_.put_child("user", response.get_child("result").to_ptree());
         };
     }
 
@@ -333,7 +331,7 @@ void TelegramConnection::connect()
         ErrorLog("telegram") << "Could not connect: Network error";
     };
 
-    auto on_connect = [this, on_success](const PropertyTree& response)
+    auto on_connect = [this, on_success](const httpony::json::JsonNode& response)
     {
         if ( response.get("ok", false) )
         {
@@ -352,7 +350,7 @@ void TelegramConnection::connect()
 
     if ( webhook )
     {
-        PropertyTree props;
+        httpony::json::JsonNode props;
         props.put("url", webhook_url);
         props.put("max_connections", webhook_max_connections);
         post("setWebhook", props, on_connect, on_error);
@@ -427,7 +425,7 @@ void TelegramConnection::poll()
     process_events(resp.body.input());
 }
 
-user::User TelegramConnection::user_attributes(const PropertyTree& user) const
+user::User TelegramConnection::user_attributes(const httpony::json::JsonNode& user) const
 {
     std::string first_name = user.get("first_name", "");
     std::string last_name = user.get("last_name", "");
@@ -462,7 +460,7 @@ web::Response TelegramConnection::receive_push(const RequestItem& request)
     return web::Response();
 }
 
-void TelegramConnection::process_event(PropertyTree& event)
+void TelegramConnection::process_event(httpony::json::JsonNode& event)
 {
     static const std::regex regex_command(
         R"((/.+)?@(\w+)(\s*)(.*))",
@@ -514,7 +512,7 @@ void TelegramConnection::process_event(PropertyTree& event)
 
 void TelegramConnection::process_events(httpony::io::InputContentStream& body)
 {
-    PropertyTree content;
+    httpony::json::JsonNode content;
     try
     {
         content = httpony::json::JsonParser().parse(body);

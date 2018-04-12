@@ -234,6 +234,14 @@ void TelegramConnection::post(const std::string& method,
     web::Request web_request("POST", api_uri(method));
     web_request.body.start_output("application/json");
     web_request.body << payload;
+
+    if ( Logger::instance().check_log_verbosity("telegram", 3) )
+    {
+        std::stringstream ss;
+        ss << payload;
+        Log("telegram", '<', 3) << ss.str();
+    }
+
     request(std::move(web_request), callback, on_error);
 }
 
@@ -262,6 +270,12 @@ void TelegramConnection::request(web::Request&& request,
             try
             {
                 auto content = httpony::json::JsonParser().parse(response.body);
+                if ( Logger::instance().check_log_verbosity("telegram", 3) )
+                {
+                    std::stringstream ss;
+                    ss << content;
+                    Log("telegram", '>', 3) << ss.str();
+                }
                 if ( callback )
                     callback(content);
             }

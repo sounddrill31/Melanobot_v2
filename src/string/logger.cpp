@@ -68,6 +68,12 @@ void Logger::set_log_verbosity(const std::string& name, int level)
     log_types[name].verbosity = level;
 }
 
+bool Logger::check_log_verbosity(const std::string& name, int level)
+{
+    auto lock = make_lock(mutex);
+    return log_types[name].verbosity >= level;
+}
+
 void Logger::load_settings(const Settings& settings)
 {
     auto lock = make_lock(mutex);

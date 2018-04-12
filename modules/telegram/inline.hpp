@@ -92,6 +92,7 @@ public:
     {
         PropertyBuilder ptree;
         httpony::json::JsonNode treeresults;
+        treeresults.to_array();
         int i = 0;
         for ( const auto& result : results )
         {

@@ -448,12 +448,12 @@ user::User TelegramConnection::user_attributes(const httpony::json::JsonNode& us
         full_name += " ";
     full_name += last_name;
 
-    std::string userid = user.get("id", "");
+    std::string userid = user.get_raw("id", "");
     std::string username = user.get("username", "");
 
     if ( username.empty() )
     {
-        username = 'u' + user.get("id", "");
+        username = 'u' + user.get_raw("id", "");
         if ( full_name.empty() )
             full_name = userid;
     }
@@ -502,7 +502,7 @@ void TelegramConnection::process_event(httpony::json::JsonNode& event)
         }
 
         msg.from = user_attributes(message->get_child("from"));
-        msg.channels = {message->get("chat.id", "")};
+        msg.channels = {message->get_raw("chat.id", "")};
         Log("telegram", '<', 1) << color::magenta << msg.from.name
             << color::nocolor << ' ' << msg.message;
         msg.send(this);
@@ -529,7 +529,17 @@ void TelegramConnection::process_events(httpony::io::InputContentStream& body)
     httpony::json::JsonNode content;
     try
     {
-        content = httpony::json::JsonParser().parse(body);
+        if ( Logger::instance().check_log_verbosity("telegram", 3) )
+        {
+            std::stringstream ss;
+            ss << body.rdbuf();
+            Log("telegram", '<', 3) << ss.str();
+            content = httpony::json::JsonParser().parse(ss);
+        }
+        else
+        {
+            content = httpony::json::JsonParser().parse(body);
+        }
     }
     catch(httpony::json::JsonError&)
     {

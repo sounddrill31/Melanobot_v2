@@ -97,7 +97,7 @@ void EventSource::dispatch_events(web::Response& response, const std::string& ur
     if ( response.status.is_error() )
         return;
 
-    httpony::json::JsonParser parser;
+    httpony::json::JsonParserPtree parser;
     parser.throws(false);
 
     /// \todo Figure why without the extra reference, it fails to read all of the data

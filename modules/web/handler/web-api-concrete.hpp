@@ -614,7 +614,7 @@ private:
                 if ( !resp.status.is_error() )
                 {
                     Settings ptree;
-                    httpony::json::JsonParser parser;
+                    httpony::json::JsonParserPtree parser;
                     try {
                         ptree = parser.parse(resp.body, req.uri.full());
                     } catch ( const httpony::json::JsonError& err ) {

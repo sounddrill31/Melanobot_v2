@@ -23,6 +23,8 @@
 
 #include <functional>
 
+#include "httpony/formats/json.hpp"
+
 #include "web/server/push_pages.hpp"
 #include "network/connection.hpp"
 
@@ -32,7 +34,7 @@ namespace telegram{
 class TelegramConnection : public network::AuthConnection, web::PushReceiver
 {
 public:
-    using ApiCallback = std::function<void(PropertyTree)>;
+    using ApiCallback = std::function<void(httpony::json::JsonNode)>;
     using ErrorCallback = std::function<void()>;
 
     static std::unique_ptr<TelegramConnection> create(
@@ -82,7 +84,7 @@ public:
      * \thread external \lock none
      */
     void post(const std::string& method,
-              const PropertyTree& payload,
+              const httpony::json::JsonNode& payload,
               const ApiCallback& callback,
               const ErrorCallback& on_error = {}
     );
@@ -142,7 +144,7 @@ public:
     /**
      * \thead external \lock data
      */
-    string::FormattedProperties pretty_properties() const;
+    string::FormattedProperties pretty_properties() const override;
 
     user::User build_user(const std::string& local_id) const override;
 
@@ -157,7 +159,7 @@ private:
      * \brief Callback used to just log error requests
      * \thead external \lock none
      */
-    void log_errors(const PropertyTree& response) const;
+    void log_errors(const httpony::json::JsonNode& response) const;
 
     /**
      * \brief Sends a request to the api
@@ -183,7 +185,7 @@ private:
      * \brief Processes a single event
      * \thead input \lock none
      */
-    void process_event(PropertyTree& event);
+    void process_event(httpony::json::JsonNode& event);
 
     /**
      * \brief Returns the URI for the given API method
@@ -195,7 +197,7 @@ private:
      * \brief Returns a user from a json object
      * \thead external \lock none
      */
-    user::User user_attributes(const PropertyTree& user) const;
+    user::User user_attributes(const httpony::json::JsonNode& user) const;
 
     web::Uri api_base;
     PropertyTree properties_;

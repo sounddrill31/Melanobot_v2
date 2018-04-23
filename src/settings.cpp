@@ -193,7 +193,7 @@ Settings settings::load ( const std::string& file_name, FileFormat format )
             break;
         case FileFormat::JSON:
         {
-            httpony::json::JsonParser parser;
+            httpony::json::JsonParserPtree parser;
             ptree = parser.parse_file(file_name);
             break;
         }

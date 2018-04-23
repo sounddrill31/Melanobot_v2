@@ -83,6 +83,7 @@ macro(melanomodule name description default)
 endmacro()
 
 # Libraries
+include(testing)
 
 include_directories(${CMAKE_SOURCE_DIR}/lib/Melanolib/include)
 add_definitions(-DMELANOLIB_BOOST_OPTIONAL -DMELANOLIB_BOOST_ANY)
@@ -115,7 +116,6 @@ endif()
 add_subdirectory(src bin)
 
 # Tests 
-include(testing)
 # add_subdirectory(lib/Melanolib/test EXCLUDE_FROM_ALL)
 add_subdirectory(test)
 

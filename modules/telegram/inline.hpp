@@ -19,17 +19,17 @@
 #ifndef MELANOBOT_MODULES_TELEGRAM_INLINE_HPP
 #define MELANOBOT_MODULES_TELEGRAM_INLINE_HPP
 
-
 #include "melanobot/handler.hpp"
 #include "telegram-connection.hpp"
 #include "web/handler/web-api.hpp"
+#include "httpony/formats/json.hpp"
 
 namespace telegram {
 
-class PropertyBuilder : public PropertyTree
+class PropertyBuilder : public httpony::json::JsonNode
 {
 public:
-    using PropertyTree::PropertyTree;
+    using JsonNode::JsonNode;
 
     void maybe_put(const std::string& name, const std::string& value)
     {
@@ -91,7 +91,8 @@ public:
     PropertyBuilder to_properties() const
     {
         PropertyBuilder ptree;
-        PropertyTree treeresults;
+        httpony::json::JsonNode treeresults;
+        treeresults.to_array();
         int i = 0;
         for ( const auto& result : results )
         {
@@ -145,8 +146,8 @@ struct PhotoData
 {
     std::string photo_url;
     std::string thumb_url;
-    int photo_width = 0;
-    int photo_height = 0;
+    int photo_width = 512;
+    int photo_height = 512;
     std::string title;
     std::string description;
     std::string parse_mode;

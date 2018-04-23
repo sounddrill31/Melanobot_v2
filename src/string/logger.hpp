@@ -63,6 +63,11 @@ public:
     void set_log_verbosity(const std::string& name, int level);
 
     /**
+     * \brief Whether the specified log has at least this much verbosity
+     **/
+    bool check_log_verbosity(const std::string& name, int level);
+
+    /**
      * \brief Log a message
      * \thread any \lock mutex
      */

@@ -79,7 +79,7 @@ bool VideoInfo::on_handle(network::Message& msg)
                 if ( !response.status.is_error() )
                 {
                     Settings ptree;
-                    httpony::json::JsonParser parser;
+                    httpony::json::JsonParserPtree parser;
                     try {
                         ptree = parser.parse(response.body, request.uri.full());
                         (this->*found_func)(msg, ptree);

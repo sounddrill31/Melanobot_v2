@@ -485,7 +485,37 @@ void TelegramConnection::process_event(httpony::json::JsonNode& event)
     {
         network::Message msg;
 
-        msg.chat(message->get<std::string>("text"));
+        if ( auto text = message->get_optional<std::string>("text") )
+        {
+            msg.chat(*text);
+        }
+        else if ( auto sticker = message->get_child_optional("sticker") )
+        {
+            msg.type = network::Message::UNKNOWN;
+            msg.message = sticker->get("emoji", "");
+            msg.command = "sticker";
+            msg.params.push_back(sticker->get<std::string>("file_id"));
+            msg.params.push_back(sticker->get<std::string>("set_name"));
+        }
+        else if ( auto document = message->get_child_optional("document") )
+        {
+            msg.type = network::Message::UNKNOWN;
+            msg.message = document->get("file_name", "");
+            msg.command = "document";
+            msg.params.push_back(document->get<std::string>("file_id"));
+            msg.params.push_back(document->get<std::string>("mime_type"));
+        }
+        else if ( auto photo = message->get_child_optional("photo") )
+        {
+            msg.type = network::Message::UNKNOWN;
+            msg.command = "photo";
+            msg.params.push_back(photo->get<std::string>("0.file_id"));
+        }
+        else
+        {
+            msg.type = network::Message::UNKNOWN;
+        }
+
         msg.direct = message->get("chat.type", "") == "private";
 
         std::smatch match;

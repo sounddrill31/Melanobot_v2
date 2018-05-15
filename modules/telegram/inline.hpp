@@ -196,7 +196,38 @@ struct ArticleData
     }
 };
 
+
+struct GifData
+{
+    std::string gif_url;
+    std::string thumb_url;
+    int gif_width = 0;
+    int gif_height = 0;
+    int gif_duration = 0;
+    std::string title;
+    std::string caption;
+    std::string parse_mode;
+    // reply_markup
+    // input_message_content
+
+    PropertyBuilder to_properties() const
+    {
+        PropertyBuilder ptree;
+        ptree.put("gif_url", gif_url);
+        ptree.put("type", "gif");
+        ptree.maybe_put("gif_width", gif_width, 1);
+        ptree.maybe_put("gif_height", gif_height, 1);
+        ptree.maybe_put("gif_duration", gif_duration, 1);
+        ptree.put("thumb_url", thumb_url.empty() ? gif_url : thumb_url);
+        ptree.maybe_put("title", title);
+        ptree.maybe_put("caption", caption);
+        ptree.maybe_put("parse_mode", parse_mode);
+        return ptree;
+    }
+};
+
 using InlineQueryResultPhoto = SimpleDataInlineQueryResult<PhotoData>;
+using InlineQueryResultGif = SimpleDataInlineQueryResult<GifData>;
 using InlineQueryResultArticle = SimpleDataInlineQueryResult<ArticleData>;
 
 
@@ -270,17 +301,13 @@ protected:
     int cache_time = -1;
 };
 
-
-/**
- * \brief Generates picture urls based on the queries
- */
-class InlinePhotoUrl : public InlineHandler<>
+class MultiUriBase : public InlineHandler<>
 {
-private:
-    class PhotoUriDescription
+protected:
+    class UriDescription
     {
     public:
-        PhotoUriDescription(std::string base, std::string param)
+        UriDescription(std::string base, std::string param)
             : base(std::move(base)),
               param(std::move(param)),
               has_query(this->base.find('?') != std::string::npos)
@@ -298,23 +325,24 @@ private:
     };
 
 public:
-    InlinePhotoUrl(const Settings& settings, MessageConsumer* parent)
+    MultiUriBase(const std::string& param_prefix, const Settings& settings, MessageConsumer* parent)
         : InlineHandler(settings, settings, parent)
     {
-        auto photo_url = settings.get("photo_url", "");
-        if ( !photo_url.empty() )
+        auto url = settings.get(param_prefix + "_url", "");
+        if ( !url.empty() )
         {
-            auto photo_param = settings.get("photo_param", "");
+            auto photo_param = settings.get(param_prefix + "_param", "");
             if ( photo_param.empty() )
                 throw melanobot::ConfigurationError(
-                    "If you specify photo_url you must specify photo_param"
+                    "If you specify " + param_prefix +
+                    "_url you must specify " + param_prefix + "_param"
                 );
-            photos.push_back({photo_url, photo_param});
+            uris.push_back({url, photo_param});
         }
 
-        for ( const auto& photo : settings.get_child("photos", {}) )
+        for ( const auto& uri : settings.get_child(param_prefix + "s", {}) )
         {
-            photos.push_back({photo.first, photo.second.data()});
+            uris.push_back({uri.first, uri.second.data()});
         }
 
     }
@@ -327,14 +355,60 @@ private:
     ) const override
     {
         auto resp = create_response(msg);
-        for ( const auto& photo : photos )
+        for ( const auto& photo : uris )
         {
             resp.result<InlineQueryResultPhoto>(photo.full_uri(query));
         }
         return resp;
     }
 
-    std::vector<PhotoUriDescription> photos;
+    virtual void add_result(
+        InlineQueryResponse& resp,
+        const UriDescription& desc,
+        const std::string& query
+    ) const = 0;
+
+    std::vector<UriDescription> uris;
+
+};
+
+/**
+ * \brief Generates picture urls based on the queries
+ */
+class InlinePhotoUrl : public MultiUriBase
+{
+public:
+    InlinePhotoUrl(const Settings& settings, MessageConsumer* parent)
+        : MultiUriBase("photo", settings, parent)
+    {}
+
+private:
+    void add_result(
+        InlineQueryResponse& resp,
+        const UriDescription& desc,
+        const std::string& query
+    ) const override
+    {
+        resp.result<InlineQueryResultPhoto>(desc.full_uri(query));
+    }
+};
+
+class InlineGifUrl : public MultiUriBase
+{
+public:
+    InlineGifUrl(const Settings& settings, MessageConsumer* parent)
+        : MultiUriBase("gif", settings, parent)
+    {}
+
+private:
+    void add_result(
+        InlineQueryResponse& resp,
+        const UriDescription& desc,
+        const std::string& query
+    ) const override
+    {
+        resp.result<InlineQueryResultGif>(desc.full_uri(query));
+    }
 };
 
 

@@ -484,6 +484,62 @@ private:
     std::string result_path;
 };
 
+class InlineFixedResponse : public InlineHandler<>
+{
+public:
+    InlineFixedResponse(const Settings& settings, MessageConsumer* parent)
+        : InlineHandler(settings, settings, parent)
+    {
+        for ( const auto& resp : settings )
+        {
+            if ( resp.first == "response" )
+            {
+                responses.push_back({});
+                string::FormattedProperties& props = responses.back();
+                for ( const auto& data : resp.second )
+                {
+                    props.insert({
+                        data.first,
+                        string::FormatterConfig().decode(data.second.data())
+                    });
+                }
+            }
+        }
+    }
+protected:
+    virtual InlineQueryResponse on_handle_query(
+        const network::Message& msg,
+        const std::string& query,
+        const std::string& offset
+    ) const
+    {
+        auto response = create_response(msg);
+        auto properties = msg.source->pretty_properties(msg.from);
+        properties["query"] = query;
+        for ( const auto& resp_template : responses )
+            response.result<DynamicInlineQueryResult>(format_result(resp_template, properties));
+        return response;
+    }
+
+private:
+    PropertyBuilder format_result(
+        const string::FormattedProperties& out_template,
+        const string::FormattedProperties& replacements
+    ) const
+    {
+        PropertyBuilder out;
+        for ( const auto& data : out_template )
+        {
+            out.put(
+                data.first,
+                data.second.replaced(replacements).encode(string::FormatterUtf8())
+            );
+        }
+        return out;
+    }
+
+    std::vector<string::FormattedProperties> responses;
+};
 
 } // namespace telegram
 

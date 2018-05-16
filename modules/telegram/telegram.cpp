@@ -37,4 +37,5 @@ MELANOMODULE_ENTRY_POINT void melanomodule_telegram_initialize(const Settings&)
     module::register_handler<telegram::InlinePhotoUrl>("InlinePhotoUrl");
     module::register_handler<telegram::InlineGifUrl>("InlineGifUrl");
     module::register_handler<telegram::InlineExternalJson>("InlineExternalJson");
+    module::register_handler<telegram::InlineFixedResponse>("InlineFixedResponse");
 }

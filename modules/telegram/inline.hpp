@@ -355,9 +355,9 @@ private:
     ) const override
     {
         auto resp = create_response(msg);
-        for ( const auto& photo : uris )
+        for ( const auto& desc : uris )
         {
-            resp.result<InlineQueryResultPhoto>(photo.full_uri(query));
+            add_result(resp, desc, query);
         }
         return resp;
     }

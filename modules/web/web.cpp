@@ -21,6 +21,7 @@
 #include "server/pages.hpp"
 #include "server/push_pages.hpp"
 #include "module/melanomodule.hpp"
+#include "string/replacements.hpp"
 
 /**
  * \brief Initializes the web module
@@ -54,4 +55,23 @@ MELANOMODULE_ENTRY_POINT void melanomodule_web_initialize(const Settings&)
     web::PageRegistry::instance().register_page<web::StatusPage>("StatusPage");
     web::PageRegistry::instance().register_page<web::Redirect>("Redirect");
     web::PageRegistry::instance().register_page<web::PushPage>("PushPage");
+
+    string::FilterRegistry::instance().register_filter("urlencode",
+        [](const std::vector<string::FormattedString>& args) -> string::FormattedString
+        {
+            if ( args.empty() )
+                return {};
+            string::FormatterUtf8 utf8;
+            return utf8.decode(httpony::urlencode(args[0].encode(utf8)));
+        }
+    );
+    string::FilterRegistry::instance().register_filter("urldecode",
+        [](const std::vector<string::FormattedString>& args) -> string::FormattedString
+        {
+            if ( args.empty() )
+                return {};
+            string::FormatterUtf8 utf8;
+            return utf8.decode(httpony::urldecode(args[0].encode(utf8)));
+        }
+    );
 }

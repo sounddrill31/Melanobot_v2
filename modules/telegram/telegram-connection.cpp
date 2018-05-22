@@ -233,12 +233,12 @@ void TelegramConnection::post(const std::string& method,
 {
     web::Request web_request("POST", api_uri(method));
     web_request.body.start_output("application/json");
-    web_request.body << payload;
+    payload.format(web_request.body, 0, 0, true);
 
     if ( Logger::instance().check_log_verbosity("telegram", 3) )
     {
         std::stringstream ss;
-        ss << payload;
+        payload.format(ss, 0, 0, true);
         Log("telegram", '<', 3) << ss.str();
     }
 

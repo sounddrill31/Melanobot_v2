@@ -45,10 +45,10 @@ inline std::string ref_to_branch(const std::string& ref)
  * \todo Allow some kind of grouping to avoid repetition
  *       of \p destination, \p target and friends
  */
-class GitHubEventListener
+class GitLabEventListener
 {
 public:
-    GitHubEventListener(
+    GitLabEventListener(
         const Settings& settings,
         std::vector<std::string> event_types,
         const std::string& reply_template)
@@ -61,7 +61,7 @@ public:
             throw melanobot::ConfigurationError("Missing destination connection");
     }
 
-    GitHubEventListener(const Settings& settings)
+    GitLabEventListener(const Settings& settings)
     {
         load_settings(settings, "");
         event_types_  = {settings.get("event_type", "")};
@@ -70,7 +70,7 @@ public:
             throw melanobot::ConfigurationError();
     }
 
-    virtual ~GitHubEventListener() {}
+    virtual ~GitLabEventListener() {}
 
     const std::vector<std::string>& event_types() const
     {
@@ -149,7 +149,7 @@ private:
 class ListenerFactory : public melanolib::Singleton<ListenerFactory>
 {
 public:
-    using product_type = std::unique_ptr<GitHubEventListener>;
+    using product_type = std::unique_ptr<GitLabEventListener>;
     using key_type = std::string;
     using args_type = const Settings&;
     using functor_type = std::function<product_type (args_type settings)>;
@@ -168,7 +168,7 @@ public:
         auto it = factory.find(name);
         if ( it != factory.end() )
             return it->second(args);
-        throw melanobot::ConfigurationError("Unknown GitHub listener: "+name);
+        throw melanobot::ConfigurationError("Unknown GitLab listener: "+name);
     }
 
 private:
@@ -183,11 +183,11 @@ private:
  * \todo Shorten comment body(?)
  * \note the repo events don't show edits or deletions
  */
-class CommitCommentEvent : public GitHubEventListener
+class CommitCommentEvent : public GitLabEventListener
 {
 public:
     CommitCommentEvent(const Settings& settings)
-        : GitHubEventListener(settings, {"CommitCommentEvent"}, default_message())
+        : GitLabEventListener(settings, {"CommitCommentEvent"}, default_message())
     {
     }
 
@@ -198,11 +198,11 @@ private:
     }
 };
 
-class RefEvents : public GitHubEventListener
+class RefEvents : public GitLabEventListener
 {
 public:
     RefEvents(const Settings& settings)
-        : GitHubEventListener(settings, {"CreateEvent", "DeleteEvent"}, default_message())
+        : GitLabEventListener(settings, {"CreateEvent", "DeleteEvent"}, default_message())
     {
     }
 
@@ -230,11 +230,11 @@ private:
     }
 };
 
-class ForkEvent : public GitHubEventListener
+class ForkEvent : public GitLabEventListener
 {
 public:
     ForkEvent(const Settings& settings)
-        : GitHubEventListener(settings, {"ForkEvent"}, default_message())
+        : GitLabEventListener(settings, {"ForkEvent"}, default_message())
     {
     }
 
@@ -245,11 +245,11 @@ private:
     }
 };
 
-class GollumEvent : public GitHubEventListener
+class GollumEvent : public GitLabEventListener
 {
 public:
     GollumEvent(const Settings& settings)
-        : GitHubEventListener(settings, {"GollumEvent"}, default_message())
+        : GitLabEventListener(settings, {"GollumEvent"}, default_message())
     {
     }
 
@@ -287,11 +287,11 @@ private:
     }
 };
 
-class IssueCommentEvent : public GitHubEventListener
+class IssueCommentEvent : public GitLabEventListener
 {
 public:
     IssueCommentEvent(const Settings& settings)
-        : GitHubEventListener(settings, {"IssueCommentEvent"}, default_message())
+        : GitLabEventListener(settings, {"IssueCommentEvent"}, default_message())
     {
     }
 
@@ -305,11 +305,11 @@ private:
 /**
  * \todo Split labeled/assigned to separate classes
  */
-class IssuesEvent : public GitHubEventListener
+class IssuesEvent : public GitLabEventListener
 {
 public:
     IssuesEvent(const Settings& settings)
-        : GitHubEventListener(settings, {"IssuesEvent"}, default_message())
+        : GitLabEventListener(settings, {"IssuesEvent"}, default_message())
     {
         detailed = settings.get("detailed", detailed);
     }
@@ -351,11 +351,11 @@ private:
 };
 
 
-class MemberEvent : public GitHubEventListener
+class MemberEvent : public GitLabEventListener
 {
 public:
     MemberEvent(const Settings& settings)
-        : GitHubEventListener(settings, {"MemberEvent"}, default_message())
+        : GitLabEventListener(settings, {"MemberEvent"}, default_message())
     {
     }
 
@@ -381,11 +381,11 @@ private:
 };
 
 
-class PullRequestEvent : public GitHubEventListener
+class PullRequestEvent : public GitLabEventListener
 {
 public:
     PullRequestEvent(const Settings& settings)
-        : GitHubEventListener(settings, {"PullRequestEvent"}, default_message())
+        : GitLabEventListener(settings, {"PullRequestEvent"}, default_message())
     {
     }
 
@@ -412,11 +412,11 @@ private:
     }
 };
 
-class PullRequestReviewCommentEvent : public GitHubEventListener
+class PullRequestReviewCommentEvent : public GitLabEventListener
 {
 public:
     PullRequestReviewCommentEvent(const Settings& settings)
-        : GitHubEventListener(settings, {"PullRequestReviewCommentEvent"}, default_message())
+        : GitLabEventListener(settings, {"PullRequestReviewCommentEvent"}, default_message())
     {
     }
 
@@ -431,11 +431,11 @@ private:
  * \todo should have a nice branch name (extracted from $payload.ref)
  * \todo should generate a url with the diff for the commits
  */
-class PushEvent : public GitHubEventListener
+class PushEvent : public GitLabEventListener
 {
 public:
     PushEvent(const Settings& settings)
-        : GitHubEventListener(settings, {"PushEvent"}, default_message())
+        : GitLabEventListener(settings, {"PushEvent"}, default_message())
     {
         commit_reply_template = string::FormatterConfig().decode(
             settings.get("commit_reply",
@@ -486,11 +486,11 @@ private:
     int commit_limit = 3;
 };
 
-class ReleaseEvent : public GitHubEventListener
+class ReleaseEvent : public GitLabEventListener
 {
 public:
     ReleaseEvent(const Settings& settings)
-        : GitHubEventListener(settings, {"ReleaseEvent"}, default_message())
+        : GitLabEventListener(settings, {"ReleaseEvent"}, default_message())
     {
     }
 

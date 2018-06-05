@@ -65,7 +65,7 @@ public:
 
     void add_listener(const std::string& event_type, const ListenerFunctor& listener);
 
-    void poll_events(const class GitHubController& source);
+    void poll_events(const class GitLabController& source);
 
     /**
      * \brief Path component of a full API event url

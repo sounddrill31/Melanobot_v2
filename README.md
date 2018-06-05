@@ -28,7 +28,7 @@ AGPLv3 or later, see COPYING.
 Sources
 -------
 
-Up to date sources are available at https://github.com/mbasaglia/Melanobot_v2
+Up to date sources are available at https://gitlab.com/mattia.basaglia/Melanobot_v2
 
 Installing
 ==========

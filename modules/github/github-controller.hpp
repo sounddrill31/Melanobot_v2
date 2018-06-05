@@ -29,16 +29,16 @@ namespace github {
 /**
  * \brief Single instance of a github connection
  */
-class GitHubController : public AsyncService
+class GitLabController : public AsyncService
 {
 public:
-    explicit GitHubController(httpony::Auth auth = {}, std::string api_url = "https://api.github.com")
+    explicit GitLabController(httpony::Auth auth = {}, std::string api_url = "https://api.github.com")
         : api_url_(std::move(api_url)), auth_(std::move(auth))
     {}
 
     void initialize(const Settings& settings) override;
 
-    ~GitHubController();
+    ~GitLabController();
 
     void stop() override;
 
@@ -48,7 +48,7 @@ public:
 
     std::string name() const override
     {
-        return "GitHub at " + api_url_;
+        return "GitLab at " + api_url_;
     }
 
     /**
@@ -74,17 +74,17 @@ private:
     std::vector<EventSource> sources;
     std::string api_url_;
     melanolib::time::Timer timer; ///< Polling timer
-    std::vector<std::unique_ptr<GitHubEventListener>> listeners;
+    std::vector<std::unique_ptr<GitLabEventListener>> listeners;
     httpony::Auth auth_;
 };
 
 /**
- * \brief Class that keeps track of \c GitHubEventSource objects
+ * \brief Class that keeps track of \c GitLabEventSource objects
  */
 class ControllerRegistry : public melanolib::Singleton<ControllerRegistry>
 {
 public:
-    MaybePtr<const GitHubController> get_source(const httpony::Auth& auth, const std::string& api_url) const
+    MaybePtr<const GitLabController> get_source(const httpony::Auth& auth, const std::string& api_url) const
     {
         for ( auto src : sources )
         {
@@ -93,17 +93,17 @@ public:
                 return {src, false};
         }
 
-        return MaybePtr<const GitHubController>::make(auth);
+        return MaybePtr<const GitLabController>::make(auth);
     }
 
-    void register_source(const GitHubController* source)
+    void register_source(const GitLabController* source)
     {
         auto it = std::find(sources.begin(), sources.end(), source);
         if ( it == sources.end() )
             sources.push_back(source);
     }
 
-    void unregister_source(const GitHubController* source)
+    void unregister_source(const GitLabController* source)
     {
         auto it = std::find(sources.begin(), sources.end(), source);
         if ( it != sources.end() )
@@ -118,7 +118,7 @@ private:
     ControllerRegistry(){}
     friend ParentSingleton;
 
-    std::vector<const GitHubController*> sources;
+    std::vector<const GitLabController*> sources;
 
 };
 

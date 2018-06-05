@@ -28,12 +28,12 @@
 namespace github {
 
 /**
- * \brief Base class for handlers that send requests to the GitHub API
+ * \brief Base class for handlers that send requests to the GitLab API
  */
-class GitHubBase : public melanobot::SimpleAction
+class GitLabBase : public melanobot::SimpleAction
 {
 public:
-    GitHubBase(const std::string& default_trigger,
+    GitLabBase(const std::string& default_trigger,
                const Settings&    settings,
                MessageConsumer*   parent)
         : SimpleAction(default_trigger, settings, parent)
@@ -88,13 +88,13 @@ private:
 /**
  * \brief Base class for handlers that ooperate on github sources
  */
-class GitHubSourceBase : public GitHubBase
+class GitLabSourceBase : public GitLabBase
 {
 public:
-    GitHubSourceBase(const std::string& default_trigger,
+    GitLabSourceBase(const std::string& default_trigger,
                const Settings&    settings,
                MessageConsumer*   parent)
-        : GitHubBase(default_trigger, settings, parent)
+        : GitLabBase(default_trigger, settings, parent)
     {
         git_source = settings.get("git_source", "");
         if ( git_source.empty() )
@@ -119,11 +119,11 @@ private:
 /**
  * \brief Gets the details of a single issue
  */
-class GitHubIssue : public GitHubSourceBase
+class GitLabIssue : public GitLabSourceBase
 {
 public:
-    GitHubIssue(const Settings& settings, MessageConsumer* parent)
-        : GitHubSourceBase("issue", settings, parent)
+    GitLabIssue(const Settings& settings, MessageConsumer* parent)
+        : GitLabSourceBase("issue", settings, parent)
     {
         reply = read_string(settings, "reply", "$(-b)#$number$(-) - $(-i)$title$(-) ($color$state$(-)): $(git_io $html_url)");
         reply_failure = read_string(settings, "reply_failure", "I didn't find issue $(-b)$message$(b)");
@@ -169,11 +169,11 @@ private:
 /**
  * \brief Gets the details of a single release
  */
-class GitHubRelease : public GitHubSourceBase
+class GitLabRelease : public GitLabSourceBase
 {
 public:
-    GitHubRelease(const Settings& settings, MessageConsumer* parent)
-        : GitHubSourceBase("release", settings, parent)
+    GitLabRelease(const Settings& settings, MessageConsumer* parent)
+        : GitLabSourceBase("release", settings, parent)
     {
         reply = read_string(settings, "reply", "$(ucfirst $release_type) $(-b)$name$(-): $(git_io $html_url)");
         reply_failure = read_string(settings, "reply_failure", "I didn't find any such release");
@@ -274,11 +274,11 @@ private:
 /**
  * \brief Searches code in github
  */
-class GitHubSearch : public GitHubBase
+class GitLabSearch : public GitLabBase
 {
 public:
-    GitHubSearch(const Settings& settings, MessageConsumer* parent)
-        : GitHubBase("code search", settings, parent)
+    GitLabSearch(const Settings& settings, MessageConsumer* parent)
+        : GitLabBase("code search", settings, parent)
     {
         reply = read_string(settings, "reply", " * [$(dark_magenta)$repository.full_name$(-)] $(dark_red)$path$(-) @ $(-b)$(short_sha $sha)$(-): $(git_io $html_url)");
         reply_invalid = read_string(settings, "reply", "$(dark_blue)std$(green)::$(blue)cout$(-) << $(dark_red)\"Search for what?\"$(-);");

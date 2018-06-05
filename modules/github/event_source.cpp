@@ -65,7 +65,7 @@ std::string EventSource::api_path() const
     return "/" + name_ + "/events";
 }
 
-void EventSource::poll_events(const GitHubController& source)
+void EventSource::poll_events(const GitLabController& source)
 {
     auto request = source.request(api_path());
     {

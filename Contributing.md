@@ -5,7 +5,7 @@ Issue Tracker
 -------------
 
 If you find a bug, or have a suggestion for a new feature you can report it
-in the [issue tracker](https://github.com/mbasaglia/Melanobot_v2/issues) or
+in the [issue tracker](https://gitlab.com/mattia.basaglia/Melanobot_v2/issues) or
 on IRC (#Evil.Ant.Colony on QuakeNet, highlight Melanosuchus).
 
 ### Labels

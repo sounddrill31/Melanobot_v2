@@ -28,16 +28,16 @@
  */
 MELANOMODULE_ENTRY_POINT module::Melanomodule melanomodule_github_metadata()
 {
-    return {"github", "GitLab integration", 0, {{"web"}}};
+    return {"github", "GitHub integration", 0, {{"web"}}};
 }
 
 
 MELANOMODULE_ENTRY_POINT void melanomodule_github_initialize(const Settings&)
 {
     github::ControllerRegistry::instance();
-    module::register_instantiable_service<github::GitLabController>("GitLab");
+    module::register_instantiable_service<github::GitHubController>("GitHub");
 
-    github::ListenerFactory::instance().register_listener<github::GitLabEventListener>("Event");
+    github::ListenerFactory::instance().register_listener<github::GitHubEventListener>("Event");
     github::ListenerFactory::instance().register_listener<github::CommitCommentEvent>("CommitCommentEvent");
     github::ListenerFactory::instance().register_listener<github::RefEvents>("RefEvents");
     github::ListenerFactory::instance().register_listener<github::ForkEvent>("ForkEvent");
@@ -50,9 +50,9 @@ MELANOMODULE_ENTRY_POINT void melanomodule_github_initialize(const Settings&)
     github::ListenerFactory::instance().register_listener<github::PushEvent>("PushEvent");
     github::ListenerFactory::instance().register_listener<github::ReleaseEvent>("ReleaseEvent");
 
-    module::register_handler<github::GitLabIssue>("GitLabIssue");
-    module::register_handler<github::GitLabRelease>("GitLabRelease");
-    module::register_handler<github::GitLabSearch>("GitLabSearch");
+    module::register_handler<github::GitHubIssue>("GitHubIssue");
+    module::register_handler<github::GitHubRelease>("GitHubRelease");
+    module::register_handler<github::GitHubSearch>("GitHubSearch");
 
     module::register_handler<github::GitIo>("GitIo");
     string::FilterRegistry::instance().register_filter("git_io",

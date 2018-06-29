@@ -21,11 +21,11 @@
 
 namespace github {
 
-void GitLabController::initialize(const Settings& settings)
+void GitHubController::initialize(const Settings& settings)
 {
     api_url_ = settings.get("api_url", api_url_);
     if ( api_url_.empty() )
-        throw melanobot::ConfigurationError("Missing GitLab API URL");
+        throw melanobot::ConfigurationError("Missing GitHub API URL");
 
     if ( api_url_.back() == '/' )
         api_url_.pop_back();
@@ -65,7 +65,7 @@ void GitLabController::initialize(const Settings& settings)
     );
 }
 
-void GitLabController::create_listener(EventSource& src, const Settings::value_type& listener, const Settings& extra)
+void GitHubController::create_listener(EventSource& src, const Settings::value_type& listener, const Settings& extra)
 {
     Settings settings = listener.second;
     ::settings::merge(settings, extra, false);
@@ -102,13 +102,13 @@ void GitLabController::create_listener(EventSource& src, const Settings::value_t
 
 }
 
-GitLabController::~GitLabController()
+GitHubController::~GitHubController()
 {
     stop();
 }
 
 
-void GitLabController::poll()
+void GitHubController::poll()
 {
     for ( auto& src : sources )
     {
@@ -117,25 +117,25 @@ void GitLabController::poll()
 }
 
 
-void GitLabController::stop()
+void GitHubController::stop()
 {
     ControllerRegistry::instance().unregister_source(this);
     timer.stop();
 }
 
-void GitLabController::start()
+void GitHubController::start()
 {
     poll();
     timer.start();
     ControllerRegistry::instance().register_source(this);
 }
 
-bool GitLabController::running() const
+bool GitHubController::running() const
 {
     return timer.running();
 }
 
-web::Request GitLabController::request(const std::string& url) const
+web::Request GitHubController::request(const std::string& url) const
 {
     auto request = web::Request("GET", api_url_+url);
     if ( !auth_.user.empty() && !auth_.password.empty() )

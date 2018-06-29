@@ -232,16 +232,16 @@ bot
 
         Remind
 
-        ; GitLab integration
+        ; GitHub integration
         Group
         {
             enabled 0
             ; You can have username and password here, see GiHub below
             git_source     repos/mbasaglia/Melanobot_v2
 
-            GitLabIssue   ; Searches for issues in the given repo
-            GitLabRelease ; Searches for releases in the given repo
-            GitLabSearch  ; Code search
+            GitHubIssue   ; Searches for issues in the given repo
+            GitHubRelease ; Searches for releases in the given repo
+            GitHubSearch  ; Code search
             {
                 ; This (optional) string is appended to the queries to limit which results are being returned
                 force "repo:mbasaglia/Melanobot_v2"
@@ -280,8 +280,8 @@ bot
                    ; if the bot is connected to multiple IRC networks.
     }
 
-    ; GitLab event manager, listens to the GitLab API for repository events
-    GitLab
+    ; GitHub event manager, listens to the GitHub API for repository events
+    GitHub
     {
         enabled 0
         ; poll_interval 10 ; By default it polls every 10 minutes, you can lower this value to 1 but you must provide a valid username/password pair to increase the API rate limits
@@ -298,7 +298,7 @@ bot
                 target      #mychannel      ; Name of the channel in said connection
 
                 RefEvents ; This responds to CreateEvent and DeleteEvent from the API
-                ; All of the following listeners match the corresponing event types from the GitLab API
+                ; All of the following listeners match the corresponing event types from the GitHub API
                 CommitCommentEvent
                 ForkEvent
                 GollumEvent

@@ -81,6 +81,41 @@ Formatter::Registry::Registry()
         }
     );
 
+    // round:
+    //  number      number to round
+    //  [places]    decimal places to keep
+    FilterRegistry::instance().register_filter("round",
+        [](const std::vector<string::FormattedString>& args) -> string::FormattedString
+        {
+            if ( args.size() < 1 )
+                return "0";
+            string::FormatterAscii ascii;
+
+            float number = 0;
+
+            try {
+                number = std::stod(args[0].encode(ascii));
+            } catch ( const std::exception& ) {}
+
+            int places = 0;
+            if ( args.size() > 1 )
+            {
+                try {
+                    places = std::stoi(args[1].encode(ascii));
+                    for ( int i = 0; i < places; i++ )
+                        number *= 10;
+                } catch ( const std::exception& ) {}
+            }
+
+            std::string string = std::to_string(long(std::round(number)));
+
+            if ( places )
+                string.insert(string.end() - places, '.');
+
+            return string;
+        }
+    );
+
     add_formatter(default_formatter = new FormatterUtf8);
     add_formatter(new FormatterAscii);
     add_formatter(new FormatterAnsi(true));

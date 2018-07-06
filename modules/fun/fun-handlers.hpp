@@ -101,7 +101,7 @@ private:
  * \brief Draws a pretty My Little Pony ASCII art
  * \note Very useful to see how the bot handles flooding
  * \note Even more useful to see pretty ponies ;-)
- * \see https://github.com/mbasaglia/ASCII-Pony
+ * \see https://gitlab.com/mattia.basaglia/ASCII-Pony
  */
 class RenderPony : public melanobot::SimpleAction
 {

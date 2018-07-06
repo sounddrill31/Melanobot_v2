@@ -19,17 +19,17 @@
 #ifndef MELANOBOT_MODULES_TELEGRAM_INLINE_HPP
 #define MELANOBOT_MODULES_TELEGRAM_INLINE_HPP
 
-
 #include "melanobot/handler.hpp"
 #include "telegram-connection.hpp"
 #include "web/handler/web-api.hpp"
+#include "httpony/formats/json.hpp"
 
 namespace telegram {
 
-class PropertyBuilder : public PropertyTree
+class PropertyBuilder : public httpony::json::JsonNode
 {
 public:
-    using PropertyTree::PropertyTree;
+    using JsonNode::JsonNode;
 
     void maybe_put(const std::string& name, const std::string& value)
     {
@@ -91,7 +91,8 @@ public:
     PropertyBuilder to_properties() const
     {
         PropertyBuilder ptree;
-        PropertyTree treeresults;
+        httpony::json::JsonNode treeresults;
+        treeresults.to_array();
         int i = 0;
         for ( const auto& result : results )
         {
@@ -145,8 +146,8 @@ struct PhotoData
 {
     std::string photo_url;
     std::string thumb_url;
-    int photo_width = 0;
-    int photo_height = 0;
+    int photo_width = 512;
+    int photo_height = 512;
     std::string title;
     std::string description;
     std::string parse_mode;
@@ -195,7 +196,38 @@ struct ArticleData
     }
 };
 
+
+struct GifData
+{
+    std::string gif_url;
+    std::string thumb_url;
+    int gif_width = 0;
+    int gif_height = 0;
+    int gif_duration = 0;
+    std::string title;
+    std::string caption;
+    std::string parse_mode;
+    // reply_markup
+    // input_message_content
+
+    PropertyBuilder to_properties() const
+    {
+        PropertyBuilder ptree;
+        ptree.put("gif_url", gif_url);
+        ptree.put("type", "gif");
+        ptree.maybe_put("gif_width", gif_width, 1);
+        ptree.maybe_put("gif_height", gif_height, 1);
+        ptree.maybe_put("gif_duration", gif_duration, 1);
+        ptree.put("thumb_url", thumb_url.empty() ? gif_url : thumb_url);
+        ptree.maybe_put("title", title);
+        ptree.maybe_put("caption", caption);
+        ptree.maybe_put("parse_mode", parse_mode);
+        return ptree;
+    }
+};
+
 using InlineQueryResultPhoto = SimpleDataInlineQueryResult<PhotoData>;
+using InlineQueryResultGif = SimpleDataInlineQueryResult<GifData>;
 using InlineQueryResultArticle = SimpleDataInlineQueryResult<ArticleData>;
 
 
@@ -269,17 +301,13 @@ protected:
     int cache_time = -1;
 };
 
-
-/**
- * \brief Generates picture urls based on the queries
- */
-class InlinePhotoUrl : public InlineHandler<>
+class MultiUriBase : public InlineHandler<>
 {
-private:
-    class PhotoUriDescription
+protected:
+    class UriDescription
     {
     public:
-        PhotoUriDescription(std::string base, std::string param)
+        UriDescription(std::string base, std::string param)
             : base(std::move(base)),
               param(std::move(param)),
               has_query(this->base.find('?') != std::string::npos)
@@ -297,23 +325,24 @@ private:
     };
 
 public:
-    InlinePhotoUrl(const Settings& settings, MessageConsumer* parent)
+    MultiUriBase(const std::string& param_prefix, const Settings& settings, MessageConsumer* parent)
         : InlineHandler(settings, settings, parent)
     {
-        auto photo_url = settings.get("photo_url", "");
-        if ( !photo_url.empty() )
+        auto url = settings.get(param_prefix + "_url", "");
+        if ( !url.empty() )
         {
-            auto photo_param = settings.get("photo_param", "");
+            auto photo_param = settings.get(param_prefix + "_param", "");
             if ( photo_param.empty() )
                 throw melanobot::ConfigurationError(
-                    "If you specify photo_url you must specify photo_param"
+                    "If you specify " + param_prefix +
+                    "_url you must specify " + param_prefix + "_param"
                 );
-            photos.push_back({photo_url, photo_param});
+            uris.push_back({url, photo_param});
         }
 
-        for ( const auto& photo : settings.get_child("photos", {}) )
+        for ( const auto& uri : settings.get_child(param_prefix + "s", {}) )
         {
-            photos.push_back({photo.first, photo.second.data()});
+            uris.push_back({uri.first, uri.second.data()});
         }
 
     }
@@ -326,14 +355,60 @@ private:
     ) const override
     {
         auto resp = create_response(msg);
-        for ( const auto& photo : photos )
+        for ( const auto& desc : uris )
         {
-            resp.result<InlineQueryResultPhoto>(photo.full_uri(query));
+            add_result(resp, desc, query);
         }
         return resp;
     }
 
-    std::vector<PhotoUriDescription> photos;
+    virtual void add_result(
+        InlineQueryResponse& resp,
+        const UriDescription& desc,
+        const std::string& query
+    ) const = 0;
+
+    std::vector<UriDescription> uris;
+
+};
+
+/**
+ * \brief Generates picture urls based on the queries
+ */
+class InlinePhotoUrl : public MultiUriBase
+{
+public:
+    InlinePhotoUrl(const Settings& settings, MessageConsumer* parent)
+        : MultiUriBase("photo", settings, parent)
+    {}
+
+private:
+    void add_result(
+        InlineQueryResponse& resp,
+        const UriDescription& desc,
+        const std::string& query
+    ) const override
+    {
+        resp.result<InlineQueryResultPhoto>(desc.full_uri(query));
+    }
+};
+
+class InlineGifUrl : public MultiUriBase
+{
+public:
+    InlineGifUrl(const Settings& settings, MessageConsumer* parent)
+        : MultiUriBase("gif", settings, parent)
+    {}
+
+private:
+    void add_result(
+        InlineQueryResponse& resp,
+        const UriDescription& desc,
+        const std::string& query
+    ) const override
+    {
+        resp.result<InlineQueryResultGif>(desc.full_uri(query));
+    }
 };
 
 
@@ -409,6 +484,62 @@ private:
     std::string result_path;
 };
 
+class InlineFixedResponse : public InlineHandler<>
+{
+public:
+    InlineFixedResponse(const Settings& settings, MessageConsumer* parent)
+        : InlineHandler(settings, settings, parent)
+    {
+        for ( const auto& resp : settings )
+        {
+            if ( resp.first == "response" )
+            {
+                responses.push_back({});
+                string::FormattedProperties& props = responses.back();
+                for ( const auto& data : resp.second )
+                {
+                    props.insert({
+                        data.first,
+                        string::FormatterConfig().decode(data.second.data())
+                    });
+                }
+            }
+        }
+    }
+protected:
+    virtual InlineQueryResponse on_handle_query(
+        const network::Message& msg,
+        const std::string& query,
+        const std::string& offset
+    ) const
+    {
+        auto response = create_response(msg);
+        auto properties = msg.source->pretty_properties(msg.from);
+        properties["query"] = query;
+        for ( const auto& resp_template : responses )
+            response.result<DynamicInlineQueryResult>(format_result(resp_template, properties));
+        return response;
+    }
+
+private:
+    PropertyBuilder format_result(
+        const string::FormattedProperties& out_template,
+        const string::FormattedProperties& replacements
+    ) const
+    {
+        PropertyBuilder out;
+        for ( const auto& data : out_template )
+        {
+            out.put(
+                data.first,
+                data.second.replaced(replacements).encode(string::FormatterUtf8())
+            );
+        }
+        return out;
+    }
+
+    std::vector<string::FormattedProperties> responses;
+};
 
 } // namespace telegram
 

@@ -158,7 +158,7 @@ class XonoticScores : public core::ConnectionMonitor
 {
 public:
     XonoticScores(const Settings& settings, MessageConsumer* parent)
-        : ConnectionMonitor("", settings, parent)
+        : ConnectionMonitor("scores", settings, parent)
     {
         synopsis += " [filter]";
         help = "Lists current scores";

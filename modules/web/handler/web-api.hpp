@@ -92,7 +92,7 @@ protected:
     void http_success(const network::Message& msg, web::Request& request, web::Response& response) override
     {
         Settings ptree;
-        httpony::json::JsonParser parser;
+        httpony::json::JsonParserPtree parser;
         try {
             if ( ignore_errors )
                 parser.throws(false);

@@ -114,7 +114,7 @@ void Storage::load()
         else if ( format == settings::FileFormat::XML )
             boost::property_tree::read_xml(file, data);
         else
-            data = httpony::json::JsonParser().parse_file(filename);
+            data = httpony::json::JsonParserPtree().parse_file(filename);
     }
 }
 

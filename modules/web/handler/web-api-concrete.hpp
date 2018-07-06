@@ -614,7 +614,7 @@ private:
                 if ( !resp.status.is_error() )
                 {
                     Settings ptree;
-                    httpony::json::JsonParser parser;
+                    httpony::json::JsonParserPtree parser;
                     try {
                         ptree = parser.parse(resp.body, req.uri.full());
                     } catch ( const httpony::json::JsonError& err ) {
@@ -763,6 +763,98 @@ private:
     std::string base = "https://www.reddit.com";
     std::string subreddit;
     string::FormattedString reply;
+    string::FormattedString not_found_reply;
+};
+
+
+
+/**
+ * \brief Handler searching a video on OpenWeatherMaps
+ */
+class OpenWeather : public SimpleJson
+{
+public:
+    OpenWeather(const Settings& settings, MessageConsumer* parent)
+        : SimpleJson("weather", settings, parent)
+    {
+        synopsis += " City";
+        help = "Get the weather from OpenWeatherMaps";
+        api_key = settings.get("api_key", api_key);
+        api_url = settings.get("url", api_url);
+        units = settings.get("units", units);
+        reply = read_string(settings, "reply",
+            "$(round $main.temp 1) C, $main.humidity% Humidity, "
+            "$weather.0.description https://openweathermap.org/img/w/${weather.0.icon}.png");
+        not_found_reply = read_string(settings, "not_found", "$message");
+
+        if ( api_key.empty() || api_url.empty() || reply.empty() )
+            throw melanobot::ConfigurationError();
+    }
+
+protected:
+    bool on_handle(network::Message& msg) override
+    {
+        request_json(msg, web::Request("GET", Uri(api_url, {
+            {"appid", "c825eec93720247e0e6bc2f699dbadff"},
+            {"units", units},
+            {"q", msg.message},
+        })));
+        return true;
+    }
+
+    void http_failure(const network::Message& msg, web::Request& request, web::Response& response) override
+    {
+        Settings ptree;
+        httpony::json::JsonParserPtree parser;
+        try {
+            if ( ignore_errors )
+                parser.throws(false);
+            ptree = parser.parse_string(response.body.read_all(), request.uri.full());
+            reply_to(msg, not_found_reply.replaced(ptree));
+        } catch ( const httpony::json::JsonError& err ) {
+            ErrorLog errlog("web", "JSON Error");
+            if ( settings::global_settings.get("debug", 0) )
+                errlog << err.file << ':' << err.line << ": ";
+            errlog << err.what();
+            json_failure(msg);
+        }
+    }
+
+    void json_failure(const network::Message& msg) override
+    {
+        string::FormattedProperties prop {
+            {"message", "invalid response"}
+        };
+        reply_to(msg, not_found_reply.replaced(prop));
+    }
+
+    void json_success(const network::Message& msg, const Settings& parsed) override
+    {
+        reply_to(msg, reply.replaced(parsed));
+    }
+
+private:
+    /**
+     * \brief API key
+     */
+    std::string api_key;
+    /**
+     * \brief API URL
+     */
+    std::string api_url = "https://api.openweathermap.org/data/2.5/weather";
+
+    /**
+     * \brief Units (default, metric, imperial)
+     */
+    std::string units = "metric";
+
+    /**
+     * \brief Reply to give on found
+     */
+    string::FormattedString reply;
+    /**
+     * \brief Fixed reply to give on not found
+     */
     string::FormattedString not_found_reply;
 };
 

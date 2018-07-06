@@ -6,4 +6,4 @@
 	url = https://gitlab.com/mattia.basaglia/CMake-Lib.git
 [submodule "lib/HttPony"]
 	path = lib/HttPony
-	url = https://gitlab.com/mattia.basaglia/HttPony.git
+	url = https://github.com/TheRegulars/HttpPony.git

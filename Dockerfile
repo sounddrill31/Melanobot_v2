@@ -1,4 +1,4 @@
-FROM debian:buster as builder
+FROM debian:stretch as builder
 
 RUN apt-get update && apt-get install -y build-essential g++ make cmake \
     cmake-curses-gui libgeoip-dev libboost-dev libasio-dev \
@@ -25,7 +25,7 @@ RUN cd /build && cmake \
     cp /build/lib/*.so /opt/melanobot/lib/ && \
     cp -rf /build/lib/melanobot /opt/melanobot/lib/
 
-FROM debian:buster-slim
+FROM debian:stretch -slim
 RUN apt-get update && apt-get install -y libboost-atomic1.62.0 \
     libboost-chrono1.62.0 libboost-date-time1.62.0 libboost-filesystem1.62.0 \
     libboost-program-options1.62.0 libboost-python1.62.0 libboost-regex1.62.0 \
